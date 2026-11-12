@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>push plumbing test</title></head>
+<body>
+<h3>Chrome FCM receive test (self-contained)</h3>
+<button id="sub">Subscribe (VAPID)</button>
+<pre id="out"></pre>
+<script>
+const out = s => document.getElementById('out').textContent += s + "\n";
+const B64URL = 'BJoPL94z4ZxSKwlbKt_bZUmD3bllCwA2KkA68BN3zTEoC7jErR0zyWnepx-VjfdI7NRe7WMa86QR7D6v0YfGfdc=';
+function b64ToUint8(b) { const p = '='.repeat((4 - b.length % 4) % 4); const raw = atob((b + p).replace(/-/g,'+').replace(/_/g,'/')); const a = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
+navigator.serviceWorker.addEventListener('message', ev => out('[SW-MSG] ' + JSON.stringify(ev.data)));
+document.getElementById('sub').onclick = async () => {
+  try {
+    const perm = await Notification.requestPermission();
+    out('permission=' + perm);
+    const reg = await navigator.serviceWorker.register('/push-sw.js');
+    await navigator.serviceWorker.ready;
+    out('sw-registered');
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(B64URL) });
+    out('SUBSCRIPTION=' + JSON.stringify(sub.toJSON()));
+  } catch (e) { out('err: ' + e); }
+};
+</script>
+</body></html>
