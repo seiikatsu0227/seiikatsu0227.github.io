@@ -11,13 +11,16 @@ window.addEventListener('unhandledrejection', e => log('REJECT: ' + (e.reason &&
   out.textContent = 'ready';
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) { out.textContent = 'NO PUSH API'; return; }
   try {
-    const reg = await navigator.serviceWorker.register('/pushtest/sw.js', { scope: '/pushtest/' });
-    log('sw registered scope=' + reg.scope);
+    await navigator.serviceWorker.register('/pushtest/sw.js', { scope: '/pushtest/' });
+    log('registered, waiting for active…');
+    const reg = await navigator.serviceWorker.ready;
+    log('active worker, scope=' + reg.scope);
     const perm = await Notification.requestPermission();
     log('perm=' + perm);
     if (perm !== 'granted') return;
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(atob(VAPID.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0)) });
-    localStorage.setItem('sub', JSON.stringify(sub));
+    let sub = await reg.pushManager.getSubscription();
+    if (sub) log('existing sub reused');
+    else sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(atob(VAPID.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0)) });
     out.textContent = 'SUB=' + JSON.stringify(sub) + '\n---\n(copy the SUB= line)';
     navigator.serviceWorker.addEventListener('message', e => log('MSG: ' + JSON.stringify(e.data)));
   } catch (e) { out.textContent = 'ERROR: ' + e.message; }
